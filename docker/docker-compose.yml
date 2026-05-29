@@ -6,6 +6,7 @@ networks:
 
 volumes:
   postgres_data:
+  airflow_logs:
 
 services:
 
@@ -28,3 +29,44 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  airflow-webserver:
+    image: apache/airflow:2.8.0
+    container_name: mds-airflow-webserver
+    environment:
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://mdsuser:mdspassword@postgres:5432/logs_db
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__CORE__FERNET_KEY=ZmDfcTF7_60GrrY167zsiPd67pEvs0aGOv2oasOM1Pg=
+      - AIRFLOW__WEBSERVER__EXPOSE_CONFIG=True
+    ports:
+      - "8082:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ../airflow/dags:/opt/airflow/dags
+      - ../data:/opt/airflow/data
+      - airflow_logs:/opt/airflow/logs
+    networks:
+      - mds-net
+    restart: unless-stopped
+    command: webserver
+
+  airflow-scheduler:
+    image: apache/airflow:2.8.0
+    container_name: mds-airflow-scheduler
+    environment:
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://mdsuser:mdspassword@postgres:5432/logs_db
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__CORE__FERNET_KEY=ZmDfcTF7_60GrrY167zsiPd67pEvs0aGOv2oasOM1Pg=
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ../airflow/dags:/opt/airflow/dags
+      - ../data:/opt/airflow/data
+      - airflow_logs:/opt/airflow/logs
+    networks:
+      - mds-net
+    restart: unless-stopped
+    command: scheduler
