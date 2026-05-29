@@ -1,0 +1,30 @@
+﻿version: "3.9"
+
+networks:
+  mds-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
+
+services:
+
+  postgres:
+    image: postgres:15
+    container_name: mds-postgres
+    environment:
+      POSTGRES_USER: mdsuser
+      POSTGRES_PASSWORD: mdspassword
+      POSTGRES_DB: logs_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - mds-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mdsuser -d logs_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
