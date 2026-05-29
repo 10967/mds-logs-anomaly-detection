@@ -1,0 +1,10 @@
+﻿version: 2
+
+sources:
+  - name: raw
+    schema: raw
+    tables:
+      - name: raw_ssh_logs
+        description: "Logs SSH bruts ingeres depuis SSH_2k.log"
+      - name: raw_linux_logs
+        description: "Logs Linux bruts ingeres depuis Linux_2k.log"
