@@ -70,3 +70,22 @@ services:
       - mds-net
     restart: unless-stopped
     command: scheduler
+
+  spark:
+    image: spark:3.5.0
+    container_name: mds-spark
+    environment:
+      - SPARK_MODE=master
+    ports:
+      - "8083:8080"
+      - "7077:7077"
+    volumes:
+      - ../spark:/opt/spark-apps
+      - ../data:/opt/spark-data
+    networks:
+      - mds-net
+    restart: unless-stopped
+    entrypoint: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.master.Master"]
+    entrypoint: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.master.Master"]
+
+
