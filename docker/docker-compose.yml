@@ -1,6 +1,4 @@
-﻿version: "3.9"
-
-networks:
+﻿networks:
   mds-net:
     driver: bridge
 
@@ -71,11 +69,12 @@ services:
     restart: unless-stopped
     command: scheduler
 
-  spark:
+  spark-master:
     image: spark:3.5.0
-    container_name: mds-spark
+    container_name: mds-spark-master
     environment:
       - SPARK_MODE=master
+      - SPARK_MASTER_HOST=spark-master
     ports:
       - "8083:8080"
       - "7077:7077"
@@ -86,6 +85,40 @@ services:
       - mds-net
     restart: unless-stopped
     entrypoint: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.master.Master"]
-    entrypoint: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.master.Master"]
 
+  spark-worker:
+    image: spark:3.5.0
+    container_name: mds-spark-worker
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark-master:7077
+      - SPARK_WORKER_MEMORY=2G
+      - SPARK_WORKER_CORES=2
+    depends_on:
+      - spark-master
+    volumes:
+      - ../spark:/opt/spark-apps
+      - ../data:/opt/spark-data
+    networks:
+      - mds-net
+    restart: unless-stopped
+    entrypoint: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.worker.Worker", "spark://spark-master:7077"]
 
+  metabase:
+    image: metabase/metabase:v0.48.0
+    container_name: mds-metabase
+    environment:
+      - MB_DB_TYPE=postgres
+      - MB_DB_DBNAME=logs_db
+      - MB_DB_PORT=5432
+      - MB_DB_USER=mdsuser
+      - MB_DB_PASS=mdspassword
+      - MB_DB_HOST=postgres
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - mds-net
+    restart: unless-stopped
